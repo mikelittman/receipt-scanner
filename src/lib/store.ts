@@ -23,17 +23,21 @@ export async function storeReceipt(db: Db, receipt: Schema.Receipt.Entry) {
   );
 
   await collection.createSearchIndex({
-    name: "receipts",
+    name: "receipts_search",
     definition: {
       mappings: {
         dynamic: true,
         fields: {
-          documentHash: {
-            type: "string",
-          },
-          languageCodes: {
-            type: "string",
-          },
+          documentHash: [
+            {
+              type: "string",
+            },
+          ],
+          languageCodes: [
+            {
+              type: "string",
+            },
+          ],
         },
       },
     },
@@ -69,30 +73,48 @@ export async function storeReceiptEmbedding(
     { upsert: true }
   );
 
-  await collection.createSearchIndex({
-    name: "receiptEmbedding",
-    definition: {
-      mappings: {
-        dynamic: true,
-        fields: {
-          documentHash: {
-            type: "string",
-          },
-          languageCode: {
-            type: "string",
-          },
-          text: {
-            type: "string",
-          },
-          embeddings: {
-            type: "knnVector",
-            dimensions: 1024,
-            similarity: "cosine",
+  await collection.createSearchIndexes([
+    {
+      name: "receiptEmbedding_search",
+      type: "search",
+      definition: {
+        mappings: {
+          dynamic: true,
+          fields: {
+            documentHash: [
+              {
+                type: "string",
+              },
+            ],
+            languageCode: [
+              {
+                type: "string",
+              },
+            ],
+            text: [
+              {
+                type: "string",
+              },
+            ],
           },
         },
       },
     },
-  });
+    {
+      name: "receiptEmbedding_vectorSearch",
+      type: "vectorSearch",
+      definition: {
+        fields: [
+          {
+            type: "vector",
+            path: "embeddings.embedding",
+            numDimensions: 512,
+            similarity: "cosine",
+          },
+        ],
+      },
+    },
+  ]);
 
   return result;
 }

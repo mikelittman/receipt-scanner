@@ -37,3 +37,18 @@ export function getCollection<T extends CollectionType>(
 ) {
   return db.collection<Collection[T]>(collectionName);
 }
+
+export async function receiptScannerTransaction<T>(
+  fn: (db: Db) => Promise<T>
+): Promise<T> {
+  const client = await getDbClient();
+  const db = getReceiptScannerDb(client);
+
+  let result: T | undefined;
+  try {
+    result = await fn(db);
+  } finally {
+    await client.close();
+  }
+  return result;
+}
