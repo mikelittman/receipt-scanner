@@ -10,7 +10,6 @@ export function App() {
       <ChatProvider>
         <div className="container mx-auto p-4 h-screen flex space-x-4">
           <Uploader />
-          <UploadStatusList />
           <Chat />
         </div>
       </ChatProvider>

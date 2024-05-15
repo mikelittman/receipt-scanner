@@ -9,7 +9,7 @@ export function UploadStatusList() {
   const { itemList } = useUpload();
 
   return (
-    <div className="w-1/3 bg-white p-4 rounded-lg shadow-md flex flex-col">
+    <div className="bg-white p-4 rounded-lg shadow-md flex flex-col">
       <h2 className="text-xl font-semibold mb-4">
         List of Uploads and Processing State
       </h2>
@@ -23,6 +23,7 @@ export function UploadStatusList() {
               <div>
                 File {item.file.name} - {item.status}
               </div>
+              <div className="flex flex-row"></div>
               <div>{item.status === "processing" && item.message}</div>
             </div>
             <div>
