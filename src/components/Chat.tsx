@@ -1,6 +1,6 @@
 "use client";
 
-import { ProcessDocumentState } from "@/lib/doc/process";
+import { ProcessDocumentState } from "@/lib/engine/process";
 import { ChatMessage, useChat } from "@/providers/chat";
 import { type UploadItem, useUpload } from "@/providers/uploader";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -43,7 +43,6 @@ export function Chat() {
 
   return (
     <div className="w-1/2 bg-white p-4 rounded-lg shadow-md flex flex-col">
-      <h2 className="text-xl font-semibold mb-4">Chat Window</h2>
       <div
         className="flex flex-col flex-1"
         style={{

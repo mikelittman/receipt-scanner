@@ -1,0 +1,14 @@
+Flask
+Flask-RESTful
+RestrictedPython
+requests
+numpy
+pandas
+scipy
+scikit-learn
+tensorflow
+keras
+torch
+xgboost
+lightgbm
+matplotlib

@@ -1,6 +1,5 @@
 import { UploadProvider } from "@/providers/uploader";
 import { Chat } from "./Chat";
-import { UploadStatusList } from "./UploadStatus";
 import { Uploader } from "./Uploader";
 import { ChatProvider } from "@/providers/chat";
 

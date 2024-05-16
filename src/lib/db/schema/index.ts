@@ -4,24 +4,36 @@ import {
   ReceiptEmbedding,
   ReceiptRecord,
   ReceiptItem,
+  ReceiptClassification,
 } from "./receipts";
 import type { OptionalId } from "mongodb";
+import { ScannedDocument } from "./scanned-document";
 
 export const Collections = {
   receipts: ReceiptEntry,
   receiptEmbedding: ReceiptEmbedding,
+  scannedDocuments: ScannedDocument,
 };
 
 export namespace Schema {
   export namespace Receipt {
+    // db schema
     export type Entry = OptionalId<ReceiptEntry>;
     export const Entry = ReceiptEntry;
     export type Embedding = OptionalId<ReceiptEmbedding>;
     export const Embedding = ReceiptEmbedding;
-    export type Record = z.infer<typeof ReceiptRecord>;
+    // supplemental schema
+    export type Record = ReceiptRecord;
     export const Record = ReceiptRecord;
-    export type Item = z.infer<typeof ReceiptItem>;
+    export type Item = ReceiptItem;
     export const Item = ReceiptItem;
+    export const Classification = ReceiptClassification;
+    export type Classification = ReceiptClassification;
+  }
+
+  export namespace ScannedDocument {
+    export type Entry = OptionalId<ScannedDocument>;
+    export const Entry = ScannedDocument;
   }
 }
 

@@ -1,36 +1,81 @@
 import "dotenv/config";
 
-import { join } from "path";
-import { processDocument } from "./lib/doc/process";
-import { getDbClient, getReceiptScannerDb } from "./lib/db/client";
-import { storeReceipt, storeReceiptEmbedding } from "./lib/store";
-import { logger } from "./lib/logger";
+import { getCollection, receiptScannerTransaction } from "./lib/db/client";
+import { createEmbeddings, getOpenAIClient } from "./lib/ai/openai";
+
+async function dropDb() {
+  await receiptScannerTransaction(async (db) => {
+    const collections = await db.listCollections().toArray();
+    for (const { name } of collections) {
+      await db.collection(name).drop();
+    }
+  });
+}
 
 async function main() {
-  const project_root = join(__dirname, "..");
+  // return dropDb();
 
-  const testpath = join(
-    project_root,
-    "challenge/my-receipts-master/2017/de/public transport/3ZCCCW.pdf"
-  );
+  const openai = getOpenAIClient();
+  // createJsonCompletionWithFunctions(openai, z.object({
+  // }));
 
-  const response = await processDocument(testpath);
+  const results = await receiptScannerTransaction(async (db) => {
+    // vector search for receipt embeddings
+    const query = "transportation";
 
-  console.dir(response, { depth: 3 });
+    const { embeddings } = await createEmbeddings(openai, query);
+    const [{ embedding }] = embeddings;
 
-  const db_client = await getDbClient();
+    const collection = getCollection(db, "receiptEmbedding");
 
-  const db = getReceiptScannerDb(db_client);
+    const result = await collection.aggregate([
+      {
+        $vectorSearch: {
+          index: "receiptEmbedding_vectorSearch",
+          path: "embedding",
+          queryVector: embedding,
+          numCandidates: 1000,
+          limit: 100,
+        },
+      },
+      {
+        $project: {
+          documentHash: 1,
+          languageCode: 1,
+          score: { $meta: "vectorSearchScore" },
+        },
+      },
+      {
+        $lookup: {
+          from: "receipts",
+          localField: "documentHash",
+          foreignField: "documentHash",
+          as: "receipt",
+        },
+      },
+      {
+        $group: {
+          _id: "$documentHash",
+          documentHash: { $first: "$documentHash" },
+          receipt: { $first: "$receipt" },
+          score: { $first: "$score" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          documentHash: 1,
+          receipt: 1,
+          score: 1,
+        },
+      },
+    ]);
 
-  const store = await storeReceipt(db, response.receipt);
+    return result.toArray();
+  });
 
-  logger.info({ store }, "Receipt stored");
-
-  const store_embedding = await storeReceiptEmbedding(db, response.embeddings);
-
-  logger.info({ store_embedding }, "Receipt embedding stored");
-
-  await db_client.close();
+  console.dir(results, { depth: 4 });
+  console.log(results.length, "results");
 }
 
 if (require.main === module) {

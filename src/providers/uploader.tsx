@@ -1,13 +1,14 @@
 "use client";
 
 import { Schema } from "@/lib/db/schema";
-import type { ProcessDocumentState } from "@/lib/doc/process";
+import type { ProcessDocumentState } from "@/lib/engine/process";
 import EventEmitter from "events";
 import {
   PropsWithChildren,
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -75,10 +76,8 @@ export const UploadProvider: React.FC<PropsWithChildren<{}>> = ({
     [setItemList, itemList]
   );
 
-  const uploadFile = useCallback(
+  const beginUpload = useCallback(
     (file: File) => {
-      upsertItem({ status: "waiting", file });
-
       // todo: implement max concurrent uploads
       const startedAt = new Date();
       events.emit(
@@ -139,7 +138,33 @@ export const UploadProvider: React.FC<PropsWithChildren<{}>> = ({
           console.warn("failed to upload file", file.name, err);
         });
     },
-    [upsertItem, events]
+    [events, upsertItem]
+  );
+
+  const MAX_CONCURRENT_UPLOADS = 3;
+
+  const processItems = useCallback(() => {
+    const uploading = itemList.filter((item) =>
+      ["uploading", "processing"].includes(item.status)
+    );
+    if (uploading.length < MAX_CONCURRENT_UPLOADS) {
+      const waiting = itemList.find((item) => item.status === "waiting");
+      if (waiting) {
+        beginUpload(waiting.file);
+      }
+    }
+  }, [beginUpload, itemList]);
+
+  useEffect(() => {
+    const interval = setInterval(processItems, 1000);
+    return () => clearInterval(interval);
+  }, [processItems]);
+
+  const uploadFile = useCallback(
+    (file: File) => {
+      upsertItem({ status: "waiting", file });
+    },
+    [upsertItem]
   );
 
   return (

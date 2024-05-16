@@ -4,14 +4,10 @@ import { z } from "zod";
 export const ReceiptEmbedding = z.object({
   _id: z.instanceof(ObjectId),
   documentHash: z.string(),
+  type: z.string(),
   languageCode: z.string(),
-  text: z.string().array(),
-  embeddings: z
-    .object({
-      embedding: z.number().array(),
-      index: z.number(),
-    })
-    .array(),
+  text: z.string(),
+  embedding: z.number().array(),
 });
 
 export type ReceiptEmbedding = z.infer<typeof ReceiptEmbedding>;
@@ -28,9 +24,21 @@ export const ReceiptItem = z.object({
 
 export type ReceiptItem = z.infer<typeof ReceiptItem>;
 
+export const ReceiptClassification = z.object({
+  category: z.string(),
+  purpose: z.string(),
+  expenseType: z.string(),
+  vendorType: z.string(),
+  complianceCategory: z.string(),
+  ethicalRiskScore: z.number(),
+  responsiblePartyType: z.string(),
+});
+
+export type ReceiptClassification = z.infer<typeof ReceiptClassification>;
+
 export const ReceiptRecord = z.object({
   id: z.string(),
-  date: z.string(),
+  date: z.coerce.date(),
   storeName: z.string(),
   storeAddress: z.string(),
   cashierName: z.string().optional(),
@@ -38,8 +46,10 @@ export const ReceiptRecord = z.object({
   subtotal: z.number(),
   tax: z.number(),
   total: z.number(),
+  currencyCode: z.string(),
   paymentMethod: z.string(),
   paymentDetails: z.record(z.string()),
+  classification: ReceiptClassification,
   metadata: z.unknown(),
 });
 

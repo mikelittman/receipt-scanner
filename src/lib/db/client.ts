@@ -1,5 +1,7 @@
 import { Db, MongoClient } from "mongodb";
 import { Collection, CollectionType } from "./schema";
+import { configureIndexes } from "./indexes";
+import { logger } from "../logger";
 
 function getConfig() {
   const { MONGODB_CONNECTION } = process.env;
@@ -43,6 +45,14 @@ export async function receiptScannerTransaction<T>(
 ): Promise<T> {
   const client = await getDbClient();
   const db = getReceiptScannerDb(client);
+
+  try {
+    await configureIndexes(db);
+  } catch (err) {
+    let message = err;
+    if (err instanceof Error) ({ message } = err);
+    logger.warn("Failed to configure indexes", message);
+  }
 
   let result: T | undefined;
   try {

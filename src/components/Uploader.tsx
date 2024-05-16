@@ -17,7 +17,6 @@ export function Uploader() {
   return (
     <div className="flex flex-col h-full">
       <div className="bg-white p-4 rounded-lg shadow-md flex flex-col h-1/2">
-        <h2 className="text-xl font-semibold mb-4">File Upload Area</h2>
         <div
           className="hover:bg-[#f9fafb]"
           style={{
@@ -49,7 +48,7 @@ export function Uploader() {
           <p>Drag & Drop files here or click to upload</p>
         </div>
       </div>
-      <div className="h-1/2">
+      <div className="h-1/2 mt-4">
         <UploadStatusList />
       </div>
     </div>

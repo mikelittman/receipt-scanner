@@ -16,16 +16,25 @@ function getConfig() {
   };
 }
 
-export function getOpenAiClient(): OpenAI {
+export function getOpenAIClient(): OpenAI {
   const { OPENAI_API_KEY: apiKey } = getConfig();
 
   return new OpenAI({ apiKey });
 }
 
-export async function createEmbeddings(client: OpenAI, text: string[]) {
+type EmbeddingOptions = {
+  dimensions: number;
+};
+
+export async function createEmbeddings(
+  client: OpenAI,
+  text: string,
+  options?: EmbeddingOptions
+) {
   const response = await client.embeddings.create({
     input: text,
     model: "text-embedding-3-small",
+    dimensions: options?.dimensions ?? 1536,
   });
 
   return { text, embeddings: response.data };
