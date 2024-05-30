@@ -1,4 +1,4 @@
-import { processDocumentIterator } from "@/lib/doc/process";
+import { processDocumentIterator } from "@/lib/engine/process";
 
 export async function POST(request: Request) {
   const form = await request.formData();
@@ -16,9 +16,7 @@ export async function POST(request: Request) {
 }
 
 // https://developer.mozilla.org/docs/Web/API/ReadableStream#convert_async_iterator_to_stream
-function iteratorToStream(
-  iterator: ReturnType<typeof processDocumentIterator>
-) {
+function iteratorToStream<T extends AsyncGenerator>(iterator: T) {
   return new ReadableStream({
     async pull(controller) {
       const { value, done } = await iterator.next();

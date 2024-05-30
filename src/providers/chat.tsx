@@ -14,6 +14,7 @@ export interface ChatMessage {
   id: number;
   sender: string;
   content: string;
+  contentType?: "text/plain" | "text/markdown" | "text/html";
   timestamp: Date;
 }
 
@@ -21,7 +22,11 @@ export interface ChatMessage {
 interface ChatContextType {
   messages: ChatMessage[];
   events: ChatMessageEmitter;
-  sendMessage: (sender: string, content: string) => void;
+  sendMessage: (
+    sender: string,
+    content: string,
+    contentType?: ChatMessage["contentType"]
+  ) => void;
 }
 
 // Create the chat context
@@ -37,11 +42,16 @@ export const ChatProvider: FC<PropsWithChildren> = ({ children }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   // Function to send a new chat message
-  const sendMessage = (sender: string, content: string) => {
+  const sendMessage: ChatContextType["sendMessage"] = (
+    sender,
+    content,
+    contentType
+  ) => {
     const newMessage: ChatMessage = {
       id: Date.now(),
       sender,
       content,
+      contentType,
       timestamp: new Date(),
     };
 

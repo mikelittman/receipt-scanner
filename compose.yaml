@@ -11,10 +11,12 @@ services:
       - 27017:27017
     environment:
       - LOCALDEV_PASSWORD=password
-  py-jit:
-    build: ./py-jit
+  app:
+    depends_on:
+      - mongo
+    build: .
     ports:
-      - 5000:5000
+      - 5000:3000
 volumes:
   data-cni:
   data-containers:

@@ -3,7 +3,8 @@
 import { ProcessDocumentState } from "@/lib/engine/process";
 import { ChatMessage, useChat } from "@/providers/chat";
 import { type UploadItem, useUpload } from "@/providers/uploader";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { Content } from "./Content";
 
 export function Chat() {
   const { messages, sendMessage, events } = useChat();
@@ -33,6 +34,7 @@ export function Chat() {
     events.on("message", messageListener);
     return () => void events.off("message", messageListener);
   }, [events]);
+
   useEffect(() => {
     uploadEvents.on("process", processListener);
     return () => void uploadEvents.off("process", processListener);
@@ -40,6 +42,46 @@ export function Chat() {
 
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const messagesRef = useRef<HTMLDivElement>(null);
+
+  const onSubmit = useCallback(
+    (e: FormEvent) => {
+      e.preventDefault();
+
+      setInput("");
+      sendMessage("user", input);
+      setLoading(true);
+      fetch("/api/query", {
+        body: JSON.stringify({ query: input }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      })
+        .then((response) => {
+          return response.json();
+        })
+        .then((data) => {
+          console.log({ data });
+          return data;
+        })
+        .then(({ response, contentType }) => {
+          console.log("Response", response, contentType);
+          return sendMessage("assistant", response, contentType);
+        })
+        .catch((err) => {
+          console.error("OOOOPS");
+        })
+        .finally(() => {
+          setLoading(false);
+
+          if (!messagesRef.current) return;
+          messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+        });
+    },
+    [input, sendMessage, setLoading]
+  );
 
   return (
     <div className="w-1/2 bg-white p-4 rounded-lg shadow-md flex flex-col">
@@ -54,6 +96,7 @@ export function Chat() {
         <div
           className="flex-1"
           id="chat-messages"
+          ref={messagesRef}
           style={{
             flex: 1,
             overflowY: "auto",
@@ -71,7 +114,7 @@ export function Chat() {
                   : ""
               }`}
             >
-              {message.content}
+              <Content {...{ ...message }} />
 
               <div className="text-xs text-gray-500 uppercase">
                 {message.sender}
@@ -79,39 +122,31 @@ export function Chat() {
             </div>
           ))}
         </div>
-        <div
-          className="chat-bar flex items-center"
-          style={{
-            borderTop: "1px solid #e5e7eb",
-            padding: "0.5rem",
-          }}
-        >
-          <input
-            type="text"
-            id="chat-input"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            className="flex-1 p-2 border border-gray-300 rounded"
-            placeholder="Type a message..."
-          />
-          <button
-            id="send-button"
-            disabled={loading}
-            onClick={() => {
-              setInput("");
-              sendMessage("user", input);
-              setLoading(true);
-
-              setTimeout(() => {
-                sendMessage("assistant", `You said: ${input}`);
-                setLoading(false);
-              }, 2500);
+        <form className="w-full" onSubmit={onSubmit}>
+          <div
+            className="chat-bar flex items-center"
+            style={{
+              borderTop: "1px solid #e5e7eb",
+              padding: "0.5rem",
             }}
-            className="ml-2 p-2 bg-blue-500 text-white rounded"
           >
-            Send
-          </button>
-        </div>
+            <input
+              type="text"
+              id="chat-input"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              className="flex-1 p-2 border border-gray-300 rounded"
+              placeholder="Type a message..."
+            />
+            <button
+              id="send-button"
+              disabled={loading}
+              className="ml-2 p-2 bg-blue-500 text-white rounded"
+            >
+              Send
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

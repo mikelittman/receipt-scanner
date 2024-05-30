@@ -1,3 +1,5 @@
+import { ObjectId } from "mongodb";
+
 function isPrimitiveType(item: unknown): boolean {
   return (
     ["string", "number", "boolean"].includes(typeof item) ||
@@ -9,6 +11,10 @@ export function flatJson<T>(src: T, depth = 0): string {
   if (src === null) return "null";
 
   const pad = "\t".repeat(depth);
+
+  if (src instanceof ObjectId) {
+    return src.toHexString();
+  }
 
   if (Array.isArray(src)) {
     return (
