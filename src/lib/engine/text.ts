@@ -1,9 +1,17 @@
 import OpenAI from "openai";
 import { receiptScannerTransaction } from "../db/client";
 import { getScannedDocuments, storeScannedDocument } from "../db/store";
-import { getTranslateClient, translateText } from "../language/translate";
+import {
+  getTranslateClient,
+  translateText,
+  translateTextWrapper,
+} from "../language/translate";
 import { logger } from "../logger";
-import { analyzeDocument, getTextractClient } from "../ocr/textract";
+import {
+  analyzeDocument,
+  documentAnalysisWrapper,
+  getTextractClient,
+} from "../ocr/textract";
 import { Schema } from "../db/schema";
 import {
   createEmbeddings,
@@ -11,6 +19,24 @@ import {
   getOpenAIClient,
 } from "../ai/openai";
 import pRetry from "p-retry";
+
+async function resolveDocumentText(buffer: Buffer) {
+  const textract = getTextractClient();
+
+  let document;
+
+  try {
+    document = await analyzeDocument(textract, buffer);
+  } catch {
+    document = await documentAnalysisWrapper(textract, buffer);
+  }
+
+  return (
+    document.Blocks?.map((block) => block.Text)?.filter(
+      (x): x is string => typeof x === "string"
+    ) ?? []
+  ).join("\n");
+}
 
 export async function getDocumentText(hash: string, buffer: Buffer) {
   return receiptScannerTransaction(async (db) => {
@@ -20,37 +46,52 @@ export async function getDocumentText(hash: string, buffer: Buffer) {
       return documents[0].text;
     }
 
-    const textract = getTextractClient();
-    const document = await analyzeDocument(textract, buffer);
-
-    const document_text = (
-      document.Blocks?.map((block) => block.Text)?.filter(
-        (x): x is string => typeof x === "string"
-      ) ?? []
-    ).join("\n");
+    const document_text = await resolveDocumentText(buffer);
 
     await storeScannedDocument(db, {
       documentHash: hash,
       text: document_text,
     });
 
-    logger.debug(
-      { hash, metadata: document.$metadata },
-      "Document scanned and stored"
-    );
+    logger.debug({ hash }, "Document scanned and stored");
 
     return document_text;
   });
 }
 
+function limitText(text: string, bytes: number) {
+  const buffer = Buffer.from(text);
+  if (buffer.length > bytes) {
+    return buffer.subarray(0, bytes).toString("utf-8");
+  }
+  return text;
+}
+
+export async function resovleDocumentTranslations(text: string) {
+  const client = getTranslateClient();
+  try {
+    return await translateText(client, text);
+  } catch (error) {
+    console.log(
+      "Failed to translate text",
+      error instanceof Error ? error.message : error
+    );
+    try {
+      return await translateText(client, limitText(text, 10_000));
+    } catch {
+      // lets not get to here, this takes a few minutes to complete
+      return await translateTextWrapper(client, text);
+    }
+  }
+}
+
 // todo: implement caching for translations
 export async function getDocumentTranslations(hash: string, text: string) {
-  const translate = getTranslateClient();
   const {
     translated: translatedText,
     sourceLanguage,
     targetLanguage,
-  } = await translateText(translate, text);
+  } = await resovleDocumentTranslations(text);
 
   return { translatedText, sourceLanguage, targetLanguage };
 }

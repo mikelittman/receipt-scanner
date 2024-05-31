@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Receipt Scanner
 
-## Getting Started
+## Demo Video
 
-First, run the development server:
+## Requirements
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### Services and ENVs
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+See the [`.env.example`](./.env.example) file for the necessary environment variables.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+See the [`stack/.env.example](./stack/.env.example) file for necessary deployment environment variables.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+> This step will produce an ARN that must be used in the top level `.env`
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+### To run
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- docker
+- openai api keys
+- aws credentials
+- stack deployment: `pnpm cdk deploy`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+### To develop
 
-## Deploy on Vercel
+- node@20
+- pnpm
+- mongo atlas
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+## Design choices
+
+I chose Next.js for front-end development as it's an opinionated React framework that allows rapid building of high-quality web applications. The entire solution outside of third-party APIs called is in written in TypeScript targeting Node.js
+
+Next.js is also responsible for hosting the API routes necessary to upload files and query them. MongoDB Atlas was used as I wasn't as familiar with Vector Databases but have worked with Mongo in the past. It appears to provide an effective solution for querying embeddings.
+
+I chose to use OpenAI's GPT-4o model as it's shown effective reasoning capabilities, is the most recent in terms of GPT models released, and has a great cost model for this use-case.
+
+For document ingestion and translation, AWS Textract and Translate were used. The system will try to use multiple methods to manage this ingestion to handle all file types as well as a wider range of file sizes.
+
+## For the future
+
+Going forward, this would need to be changed in order to support multi-tenancy. I would opt for a file ingestion queue which would allow for processing of multiple files at once that isn't coordinated entirely by the client. There are also some areas of refactoring/cleanup that could be done as there was some exploratory work to stand this up. Finally, some of the UI/UX interactions are less than ideal and more reflect this as a proof-of-concept than a production-ready application.
