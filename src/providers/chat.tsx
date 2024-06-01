@@ -13,7 +13,7 @@ import {
 export interface ChatMessage {
   id: number;
   sender: string;
-  content: string;
+  content: string | React.ReactNode;
   contentType?: "text/plain" | "text/markdown" | "text/html";
   timestamp: Date;
 }
@@ -24,17 +24,19 @@ interface ChatContextType {
   events: ChatMessageEmitter;
   sendMessage: (
     sender: string,
-    content: string,
+    content: string | React.ReactNode,
     contentType?: ChatMessage["contentType"]
-  ) => void;
+  ) => ChatMessage;
 }
 
 // Create the chat context
 export const ChatContext = createContext<ChatContextType>({
   messages: [],
   events: new EventEmitter(),
-  sendMessage: () => {},
+  sendMessage: () => null as any,
 });
+
+let _id = 69;
 
 // Create the chat provider component
 export const ChatProvider: FC<PropsWithChildren> = ({ children }) => {
@@ -48,7 +50,7 @@ export const ChatProvider: FC<PropsWithChildren> = ({ children }) => {
     contentType
   ) => {
     const newMessage: ChatMessage = {
-      id: Date.now(),
+      id: Date.now() + _id++,
       sender,
       content,
       contentType,
@@ -58,6 +60,8 @@ export const ChatProvider: FC<PropsWithChildren> = ({ children }) => {
     setMessages((prevMessages) => [...prevMessages, newMessage]);
 
     events.emit("message", newMessage);
+
+    return newMessage;
   };
 
   return (

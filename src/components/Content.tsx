@@ -1,11 +1,13 @@
 import Markdown from "react-markdown";
 
 type ContentProps = {
-  content: string;
+  content: string | React.ReactNode;
   contentType?: "text/plain" | "text/markdown" | "text/html";
 };
 
 export function Content({ content, contentType = "text/plain" }: ContentProps) {
+  if (typeof content !== "string") return content;
+
   switch (contentType) {
     case "text/markdown":
       return <Markdown>{content}</Markdown>;

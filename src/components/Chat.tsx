@@ -3,8 +3,16 @@
 import { ProcessDocumentState } from "@/lib/engine/process";
 import { ChatMessage, useChat } from "@/providers/chat";
 import { type UploadItem, useUpload } from "@/providers/uploader";
-import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import {
+  FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Content } from "./Content";
+import { Spinner } from "./icons/Spinner";
 
 export function Chat() {
   const { messages, sendMessage, events } = useChat();
@@ -51,6 +59,7 @@ export function Chat() {
 
       setInput("");
       sendMessage("user", input);
+      const message = sendMessage("assistant", <Spinner />);
       setLoading(true);
       fetch("/api/query", {
         body: JSON.stringify({ query: input }),
@@ -68,7 +77,10 @@ export function Chat() {
         })
         .then(({ response, contentType }) => {
           console.log("Response", response, contentType);
-          return sendMessage("assistant", response, contentType);
+          message.id = Date.now();
+          message.content = response;
+          message.contentType = contentType;
+          // return sendMessage("assistant", response, contentType);
         })
         .catch((err) => {
           console.error("OOOOPS");
@@ -83,6 +95,11 @@ export function Chat() {
     [input, sendMessage, setLoading]
   );
 
+  const sortedMessages = useMemo(
+    () => messages.sort((a, b) => b.id - a.id),
+    [messages]
+  );
+
   return (
     <div className="w-1/2 bg-white p-4 rounded-lg shadow-md flex flex-col">
       <div
@@ -93,40 +110,11 @@ export function Chat() {
           height: "100%",
         }}
       >
-        <div
-          className="flex-1"
-          id="chat-messages"
-          ref={messagesRef}
-          style={{
-            flex: 1,
-            overflowY: "auto",
-            padding: "1rem",
-          }}
-        >
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`p-2 mb-4 border border-gray-300 rounded ${
-                message.sender === "assistant"
-                  ? "bg-gray-100"
-                  : message.sender === "system"
-                  ? "bg-yellow-100"
-                  : ""
-              }`}
-            >
-              <Content {...{ ...message }} />
-
-              <div className="text-xs text-gray-500 uppercase">
-                {message.sender}
-              </div>
-            </div>
-          ))}
-        </div>
         <form className="w-full" onSubmit={onSubmit}>
           <div
             className="chat-bar flex items-center"
             style={{
-              borderTop: "1px solid #e5e7eb",
+              borderBottom: "1px solid #e5e7eb",
               padding: "0.5rem",
             }}
           >
@@ -147,6 +135,35 @@ export function Chat() {
             </button>
           </div>
         </form>
+        <div
+          className="flex-1"
+          id="chat-messages"
+          ref={messagesRef}
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "1rem",
+          }}
+        >
+          {sortedMessages.map((message, index) => (
+            <div
+              key={index}
+              className={`p-2 mb-4 border border-gray-300 rounded ${
+                message.sender === "assistant"
+                  ? "bg-gray-100"
+                  : message.sender === "system"
+                  ? "bg-yellow-100"
+                  : ""
+              }`}
+            >
+              <Content {...{ ...message }} />
+
+              <div className="text-xs text-gray-500 uppercase">
+                {message.sender}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
