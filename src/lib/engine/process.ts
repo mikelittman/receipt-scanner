@@ -10,6 +10,7 @@ import {
   getDocumentTranslations,
   summarizeDocument,
 } from "./text";
+import { storeDocumentName } from "../db/store/document-name";
 
 export type ProcessDocumentState =
   | { type: "processing"; message?: string }
@@ -21,6 +22,7 @@ export type ProcessDocumentState =
     };
 
 export async function* processDocumentIterator(
+  name: string,
   buffer: Buffer
 ): AsyncGenerator<ProcessDocumentState, void, ProcessDocumentState> {
   const hash = createHash("sha256").update(buffer).digest("hex");
@@ -30,7 +32,7 @@ export async function* processDocumentIterator(
   yield { type: "processing", message: "Analyzing..." };
   const documentText = await getDocumentText(hash, buffer);
 
-  logger.debug({ hash, documentText }, "Document analyzed");
+  logger.debug({ hash }, "Document analyzed");
 
   yield { type: "processing", message: "Translating..." };
   const { translatedText, sourceLanguage, targetLanguage } =
@@ -92,6 +94,7 @@ export async function* processDocumentIterator(
   const dbWrites = await receiptScannerTransaction(async (db) => {
     return Promise.all([
       storeReceipt(db, entry),
+      storeDocumentName(db, { documentHash: hash, name }),
       ...embeddings.map((embedding) => storeReceiptEmbedding(db, embedding)),
     ]);
   });

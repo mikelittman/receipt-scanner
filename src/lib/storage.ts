@@ -3,7 +3,7 @@ import {
   PutObjectCommand,
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
-import { sdkStreamMixin } from "@aws-sdk/util-stream-node";
+import { sdkStreamMixin } from "@smithy/util-stream";
 
 export function getS3Client(): S3Client {
   return new S3Client({});

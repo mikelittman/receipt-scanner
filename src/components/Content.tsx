@@ -1,4 +1,5 @@
 import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type ContentProps = {
   content: string | React.ReactNode;
@@ -10,7 +11,7 @@ export function Content({ content, contentType = "text/plain" }: ContentProps) {
 
   switch (contentType) {
     case "text/markdown":
-      return <Markdown>{content}</Markdown>;
+      return <Markdown remarkPlugins={[remarkGfm]}>{content}</Markdown>;
     case "text/html":
       return <div dangerouslySetInnerHTML={{ __html: content }} />;
     default:

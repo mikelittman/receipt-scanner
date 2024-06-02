@@ -8,7 +8,7 @@ export function Uploader() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { uploadFile } = useUpload();
 
-  const handleDivClick = () => {
+  const handleDivClick: React.MouseEventHandler = (e) => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
@@ -30,6 +30,17 @@ export function Uploader() {
             justifyContent: "center",
           }}
           onClick={handleDivClick}
+          onDrop={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            Array.from(e.dataTransfer.files).forEach((file) =>
+              uploadFile(file)
+            );
+          }}
+          onDragOver={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
         >
           <input
             type="file"

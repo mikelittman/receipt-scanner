@@ -2,7 +2,6 @@ import { CfnOutput, Stack, type StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs"; // import * as sqs from 'aws-cdk-lib/aws-sqs';
 import { Bucket } from "aws-cdk-lib/aws-s3";
 import {
-  ManagedPolicy,
   PolicyStatement,
   Role,
   ServicePrincipal,

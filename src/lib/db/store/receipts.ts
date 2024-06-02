@@ -41,6 +41,7 @@ const QueryReceiptEmbeddingsShape = z.object({
   documentHash: z.string(),
   receipt: Schema.Receipt.Entry.array(),
   score: z.number(),
+  documentNames: Schema.DocumentName.Entry.array(),
 });
 
 export async function queryReceiptEmbeddings(db: Db, embedding: number[]) {
@@ -72,17 +73,27 @@ export async function queryReceiptEmbeddings(db: Db, embedding: number[]) {
       },
     },
     {
+      $lookup: {
+        from: "documentNames",
+        localField: "documentHash",
+        foreignField: "documentHash",
+        as: "documentNames",
+      },
+    },
+    {
       $group: {
         _id: "$documentHash",
         documentHash: { $first: "$documentHash" },
         receipt: { $first: "$receipt" },
         score: { $first: "$score" },
+        documentNames: { $first: "$documentNames" },
       },
     },
     {
       $project: {
         _id: 0,
         documentHash: 1,
+        documentNames: 1,
         receipt: 1,
         score: 1,
       },
@@ -97,7 +108,7 @@ export async function queryReceiptEmbeddings(db: Db, embedding: number[]) {
     return QueryReceiptEmbeddingsShape.array().parse(searchResult);
   } catch (err) {
     if (err instanceof Error) {
-      console.error("🚨🚨🚨🚨🚨");
+      console.error("🚨🚨🚨🚨🚨", err.message);
     } else {
       console.error("Unknown error");
     }

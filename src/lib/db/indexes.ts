@@ -75,4 +75,16 @@ export async function configureIndexes(db: Db) {
       unique: true,
     }
   );
+
+  const documentNames = getCollection(db, "documentNames");
+
+  await documentNames.createIndex(
+    {
+      documentHash: 1,
+    },
+    {
+      name: "documentHash",
+      unique: true,
+    }
+  );
 }

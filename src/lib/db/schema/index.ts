@@ -8,11 +8,13 @@ import {
 } from "./receipts";
 import type { OptionalId } from "mongodb";
 import { ScannedDocument } from "./scanned-document";
+import { DocumentName as DocumentNames } from "./document-name";
 
 export const Collections = {
   receipts: ReceiptEntry,
   receiptEmbedding: ReceiptEmbedding,
   scannedDocuments: ScannedDocument,
+  documentNames: DocumentNames,
 };
 
 export namespace Schema {
@@ -34,6 +36,11 @@ export namespace Schema {
   export namespace ScannedDocument {
     export type Entry = OptionalId<ScannedDocument>;
     export const Entry = ScannedDocument;
+  }
+
+  export namespace DocumentName {
+    export type Entry = OptionalId<DocumentNames>;
+    export const Entry = DocumentNames;
   }
 }
 

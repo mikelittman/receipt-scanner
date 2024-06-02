@@ -26,7 +26,9 @@ async function generateQueryMessage(
     `\n\nQuestion: ${query}`,
   ];
   for (const result of results ?? []) {
-    const page = `\n\nReceipt: ${flatJson(result.receipt)}\n\n`;
+    const page = `\n\nMetadata: ${flatJson({
+      names: result.documentNames.map((doc) => doc.name),
+    })}\n\nReceipt: ${flatJson(result.receipt)}\n\n`;
     const tokens = await tokenizeData([...prompt, page].join(""));
     if (tokens.length > tokenBudget) {
       break;

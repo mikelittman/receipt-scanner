@@ -89,7 +89,7 @@ export function Chat() {
           setLoading(false);
 
           if (!messagesRef.current) return;
-          messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+          messagesRef.current.scrollTop = 0;
         });
     },
     [input, sendMessage, setLoading]
