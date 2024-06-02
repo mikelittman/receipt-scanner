@@ -40,6 +40,27 @@ export async function createEmbeddings(
   return { text, embeddings: response.data };
 }
 
+export async function createCompletion(
+  client: OpenAI,
+  system: string,
+  prompt: string
+) {
+  return client.chat.completions.create({
+    model: "gpt-4o",
+    stream: true,
+    messages: [
+      {
+        role: "system",
+        content: system,
+      },
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
+  });
+}
+
 export async function createJsonCompletion<T extends z.ZodTypeAny>(
   client: OpenAI,
   desiredSchema: T,

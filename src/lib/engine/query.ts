@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  createCompletion,
   createEmbeddings,
   createJsonCompletion,
   getOpenAIClient,
@@ -26,9 +27,10 @@ async function generateQueryMessage(
     `\n\nQuestion: ${query}`,
   ];
   for (const result of results ?? []) {
-    const page = `\n\nMetadata: ${flatJson({
-      names: result.documentNames.map((doc) => doc.name),
-    })}\n\nReceipt: ${flatJson(result.receipt)}\n\n`;
+    const page = `\n\n${flatJson({
+      documentNames: result.documentNames.map((doc) => doc.name),
+      ...result.receipt,
+    })}\n\n`;
     const tokens = await tokenizeData([...prompt, page].join(""));
     if (tokens.length > tokenBudget) {
       break;
@@ -55,7 +57,7 @@ export async function executeQuery(query: string) {
       createJsonCompletion(
         openai,
         QueryResponseShape,
-        "You answer questions about the receipts provided. Responses preferred in markdown format. contentType is in reference to the response content encoding.",
+        "You answer questions about the receipts provided. Responses preferred in markdown format. contentType is in reference to the response content encoding, prefer markdown.",
         message
       ),
     {
@@ -71,4 +73,49 @@ export async function executeQuery(query: string) {
   );
 
   return result;
+}
+
+export type ExecuteQueryState =
+  | { type: "processing"; message: string }
+  | { type: "delta"; delta: string; contentType: string }
+  | { type: "done" };
+
+export async function* executeQueryIterator(
+  query: string
+): AsyncGenerator<ExecuteQueryState, void, ExecuteQueryState> {
+  yield { type: "processing", message: "Generating query message..." };
+  const message = await generateQueryMessage(query);
+
+  yield { type: "processing", message: "Executing query..." };
+  const openai = getOpenAIClient();
+
+  const prompt = `You answer questions about the receipts provided. Responses should be in markdown format.`;
+
+  const stream = await createCompletion(openai, prompt, message);
+
+  let sentFirstMessage = false;
+
+  for await (const message of stream) {
+    if (!sentFirstMessage) {
+      sentFirstMessage = true;
+      yield {
+        type: "processing",
+        message: "",
+      };
+    }
+
+    for (const choice of message.choices) {
+      if (!choice.delta.content) {
+        continue;
+      }
+
+      yield {
+        type: "delta",
+        delta: choice.delta.content,
+        contentType: "text/markdown",
+      };
+    }
+  }
+
+  yield { type: "done" };
 }

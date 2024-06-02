@@ -27,6 +27,7 @@ interface ChatContextType {
     content: string | React.ReactNode,
     contentType?: ChatMessage["contentType"]
   ) => ChatMessage;
+  updateMessage: (message: ChatMessage) => ChatMessage;
 }
 
 // Create the chat context
@@ -34,6 +35,7 @@ export const ChatContext = createContext<ChatContextType>({
   messages: [],
   events: new EventEmitter(),
   sendMessage: () => null as any,
+  updateMessage: () => null as any,
 });
 
 let _id = 69;
@@ -61,11 +63,29 @@ export const ChatProvider: FC<PropsWithChildren> = ({ children }) => {
 
     events.emit("message", newMessage);
 
-    return newMessage;
+    return { ...newMessage };
+  };
+
+  const updateMessage: ChatContextType["updateMessage"] = (message) => {
+    setMessages((prevMessages) => {
+      const index = prevMessages.findIndex((m) => m.id === message.id);
+      if (index === -1) {
+        return prevMessages;
+      }
+
+      const newMessages = [...prevMessages];
+      newMessages.splice(index, 1, { ...message });
+
+      return newMessages;
+    });
+
+    return message;
   };
 
   return (
-    <ChatContext.Provider value={{ messages, sendMessage, events }}>
+    <ChatContext.Provider
+      value={{ messages, sendMessage, events, updateMessage }}
+    >
       {children}
     </ChatContext.Provider>
   );

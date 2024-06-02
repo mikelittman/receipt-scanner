@@ -13,9 +13,10 @@ import {
 } from "react";
 import { Content } from "./Content";
 import { Spinner } from "./icons/Spinner";
+import { ExecuteQueryState } from "@/lib/engine/query";
 
 export function Chat() {
-  const { messages, sendMessage, events } = useChat();
+  const { messages, sendMessage, events, updateMessage } = useChat();
   const { events: uploadEvents } = useUpload();
 
   const messageListener = (message: ChatMessage) => {
@@ -69,21 +70,82 @@ export function Chat() {
         method: "POST",
       })
         .then((response) => {
-          return response.json();
+          if (response.status < 200 || response.status >= 300) {
+            throw new Error("Failed to query");
+          }
+          const reader = response.body?.getReader();
+
+          let content = "";
+
+          return reader?.read().then(function pump({ done, value }): unknown {
+            if (done) return;
+            try {
+              const lines = Buffer.from(value ?? [])
+                .toString("utf-8")
+                .split("\n")
+                .filter(Boolean);
+              for (const line of lines) {
+                try {
+                  const response: ExecuteQueryState = JSON.parse(line.trim());
+
+                  switch (response.type) {
+                    case "processing":
+                      message.content = (
+                        <>
+                          {response.message}
+                          <br /> <Spinner />
+                        </>
+                      );
+                      message.contentType = "text/plain";
+                      break;
+                    case "delta":
+                      content += response.delta;
+                      message.content = (
+                        <>
+                          {content}
+                          <br />
+                          <Spinner />
+                        </>
+                      );
+                      message.contentType =
+                        response.contentType as ChatMessage["contentType"];
+                      break;
+                    case "done":
+                      message.content = content;
+                      break;
+                  }
+                  updateMessage(message);
+                } catch (err) {
+                  console.error("failed to process line", err, line);
+                }
+              }
+            } catch (err) {
+              console.error(
+                "failed to process query",
+                err,
+                Buffer.from(value ?? []).toString("utf-8")
+              );
+            }
+            return reader.read().then(pump);
+          });
         })
-        .then((data) => {
-          console.log({ data });
-          return data;
-        })
-        .then(({ response, contentType }) => {
-          console.log("Response", response, contentType);
-          message.id = Date.now();
-          message.content = response;
-          message.contentType = contentType;
-          // return sendMessage("assistant", response, contentType);
-        })
+        // .then((response) => {
+        //   return response.json();
+        // })
+        // .then((data) => {
+        //   console.log({ data });
+        //   return data;
+        // })
+        // .then(({ response, contentType }) => {
+        //   console.log("Response", response, contentType);
+        //   message.id = Date.now();
+        //   message.content = response;
+        //   message.contentType = contentType;
+        //   // return sendMessage("assistant", response, contentType);
+        // })
+
         .catch((err) => {
-          console.error("OOOOPS");
+          console.error("OOOOPS", err);
         })
         .finally(() => {
           setLoading(false);
@@ -92,7 +154,7 @@ export function Chat() {
           messagesRef.current.scrollTop = 0;
         });
     },
-    [input, sendMessage, setLoading]
+    [input, sendMessage, updateMessage, setLoading]
   );
 
   const sortedMessages = useMemo(
@@ -128,6 +190,7 @@ export function Chat() {
             />
             <button
               id="send-button"
+              type="submit"
               disabled={loading}
               className="ml-2 p-2 bg-blue-500 text-white rounded"
             >
