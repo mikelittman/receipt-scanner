@@ -2,7 +2,9 @@
 
 ## Demo Video
 
-![](https://github.com/mikelittman/receipt-scanner/raw/main/demo-video.mov)
+> Demo video is over 100MB, GitHub doesn't like embedding files that large.
+
+https://github.com/mikelittman/receipt-scanner/raw/main/demo-video.mov
 
 ## Requirements
 
