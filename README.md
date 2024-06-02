@@ -2,6 +2,8 @@
 
 ## Demo Video
 
+![](./demo-video.mov)
+
 ## Requirements
 
 ### Services and ENVs

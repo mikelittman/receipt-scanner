@@ -53,8 +53,8 @@ export async function queryReceiptEmbeddings(db: Db, embedding: number[]) {
         index: "receiptEmbedding_vectorSearch",
         path: "embedding",
         queryVector: embedding,
-        numCandidates: 1000,
-        limit: 100,
+        numCandidates: 5000,
+        limit: 1000,
       },
     },
     {
