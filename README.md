@@ -2,7 +2,7 @@
 
 ## Demo Video
 
-![](./demo-video.mov)
+https://github.com/mikelittman/receipt-scanner/raw/main/demo-video.mov
 
 ## Requirements
 
